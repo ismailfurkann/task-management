@@ -9,11 +9,11 @@ public interface ProjectService {
 
     ProjectResponseDto createProject(String ownerId, ProjectRequestDto dto);
 
-    ProjectResponseDto getProjectById(String id);
+    ProjectResponseDto getProjectById(String id, String currentUserId);
 
     List<ProjectResponseDto> getProjectsByOwner(String ownerId);
 
-    ProjectResponseDto updateProject(String id, ProjectRequestDto dto);
+    ProjectResponseDto updateProject(String id, String currentUserId, ProjectRequestDto dto);
 
-    void deleteProject(String id);
+    void deleteProject(String id, String currentUserId);
 }

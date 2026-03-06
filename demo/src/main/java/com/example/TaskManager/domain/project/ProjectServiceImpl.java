@@ -19,9 +19,8 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public ProjectResponseDto createProject(String ownerId, ProjectRequestDto dto) {
         User owner = userRepository.findById(ownerId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + ownerId));
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Aynı kullanıcının aynı isimde projesi var mı?
         if (projectRepository.existsByNameAndOwnerId(dto.name(), ownerId)) {
             throw new RuntimeException("Project with this name already exists");
         }
@@ -31,24 +30,24 @@ public class ProjectServiceImpl implements ProjectService {
         project.setDescription(dto.description());
         project.setOwner(owner);
 
-        Project saved = projectRepository.save(project);
-        return ProjectResponseDto.from(saved);
+        return ProjectResponseDto.from(projectRepository.save(project));
     }
 
     @Override
-    public ProjectResponseDto getProjectById(String id) {
+    public ProjectResponseDto getProjectById(String id, String currentUserId) {
         Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Project not found with id: " + id));
+                .orElseThrow(() -> new RuntimeException("Project not found"));
+
+        // Sadece proje sahibi görebilir
+        if (!project.getOwner().getId().equals(currentUserId)) {
+            throw new RuntimeException("Access denied");
+        }
 
         return ProjectResponseDto.from(project);
     }
 
     @Override
     public List<ProjectResponseDto> getProjectsByOwner(String ownerId) {
-        if (!userRepository.existsById(ownerId)) {
-            throw new RuntimeException("User not found with id: " + ownerId);
-        }
-
         return projectRepository.findByOwnerId(ownerId)
                 .stream()
                 .map(ProjectResponseDto::from)
@@ -56,22 +55,31 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public ProjectResponseDto updateProject(String id, ProjectRequestDto dto) {
+    public ProjectResponseDto updateProject(String id, String currentUserId, ProjectRequestDto dto) {
         Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Project not found with id: " + id));
+                .orElseThrow(() -> new RuntimeException("Project not found"));
+
+        // Sadece proje sahibi güncelleyebilir
+        if (!project.getOwner().getId().equals(currentUserId)) {
+            throw new RuntimeException("Access denied");
+        }
 
         project.setName(dto.name());
         project.setDescription(dto.description());
 
-        Project updated = projectRepository.save(project);
-        return ProjectResponseDto.from(updated);
+        return ProjectResponseDto.from(projectRepository.save(project));
     }
 
     @Override
-    public void deleteProject(String id) {
-        if (!projectRepository.existsById(id)) {
-            throw new RuntimeException("Project not found with id: " + id);
+    public void deleteProject(String id, String currentUserId) {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Project not found"));
+
+        // Sadece proje sahibi silebilir
+        if (!project.getOwner().getId().equals(currentUserId)) {
+            throw new RuntimeException("Access denied");
         }
+
         projectRepository.deleteById(id);
     }
 }

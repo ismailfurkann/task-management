@@ -2,6 +2,7 @@ package com.example.TaskManager.domain.project;
 
 import com.example.TaskManager.domain.project.ProjectRequestDto;
 import com.example.TaskManager.domain.project.ProjectResponseDto;
+import com.example.TaskManager.security.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,26 +17,25 @@ import java.util.List;
 public class ProjectController {
 
     private final ProjectService projectService;
+    private final SecurityUtils securityUtils;
 
-    // Proje oluştur — owner kim? URL'den al
-    // POST /api/projects?ownerId=abc123
     @PostMapping
     public ResponseEntity<ProjectResponseDto> createProject(
-            @RequestParam String ownerId,
             @Valid @RequestBody ProjectRequestDto dto) {
+        String ownerId = securityUtils.getCurrentUserId();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(projectService.createProject(ownerId, dto));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ProjectResponseDto> getProjectById(@PathVariable String id) {
-        return ResponseEntity.ok(projectService.getProjectById(id));
+        String currentUserId = securityUtils.getCurrentUserId();
+        return ResponseEntity.ok(projectService.getProjectById(id, currentUserId));
     }
 
-    // Kullanıcının tüm projeleri
-    // GET /api/projects?ownerId=abc123
     @GetMapping
-    public ResponseEntity<List<ProjectResponseDto>> getProjectsByOwner(@RequestParam String ownerId) {
+    public ResponseEntity<List<ProjectResponseDto>> getMyProjects() {
+        String ownerId = securityUtils.getCurrentUserId();
         return ResponseEntity.ok(projectService.getProjectsByOwner(ownerId));
     }
 
@@ -43,12 +43,14 @@ public class ProjectController {
     public ResponseEntity<ProjectResponseDto> updateProject(
             @PathVariable String id,
             @Valid @RequestBody ProjectRequestDto dto) {
-        return ResponseEntity.ok(projectService.updateProject(id, dto));
+        String currentUserId = securityUtils.getCurrentUserId();
+        return ResponseEntity.ok(projectService.updateProject(id, currentUserId, dto));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProject(@PathVariable String id) {
-        projectService.deleteProject(id);
+        String currentUserId = securityUtils.getCurrentUserId();
+        projectService.deleteProject(id, currentUserId);
         return ResponseEntity.noContent().build();
     }
 }

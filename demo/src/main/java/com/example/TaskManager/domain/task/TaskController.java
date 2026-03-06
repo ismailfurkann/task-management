@@ -2,6 +2,7 @@ package com.example.TaskManager.domain.task;
 
 import com.example.TaskManager.domain.task.TaskRequestDto;
 import com.example.TaskManager.domain.task.TaskResponseDto;
+import com.example.TaskManager.security.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,55 +17,55 @@ import java.util.List;
 public class TaskController {
 
     private final TaskService taskService;
+    private final SecurityUtils securityUtils;
 
-    // Task oluştur — hangi proje? URL'den al
-    // POST /api/tasks?projectId=abc123
     @PostMapping
     public ResponseEntity<TaskResponseDto> createTask(
             @RequestParam String projectId,
             @Valid @RequestBody TaskRequestDto dto) {
+        String currentUserId = securityUtils.getCurrentUserId();
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(taskService.createTask(projectId, dto));
+                .body(taskService.createTask(projectId, currentUserId, dto));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<TaskResponseDto> getTaskById(@PathVariable String id) {
-        return ResponseEntity.ok(taskService.getTaskById(id));
+        String currentUserId = securityUtils.getCurrentUserId();
+        return ResponseEntity.ok(taskService.getTaskById(id, currentUserId));
     }
 
-    // Projeye ait tüm tasklar
-    // GET /api/tasks?projectId=abc123
     @GetMapping
     public ResponseEntity<List<TaskResponseDto>> getTasksByProject(@RequestParam String projectId) {
-        return ResponseEntity.ok(taskService.getTasksByProject(projectId));
+        String currentUserId = securityUtils.getCurrentUserId();
+        return ResponseEntity.ok(taskService.getTasksByProject(projectId, currentUserId));
     }
 
-    // Kullanıcıya atanmış tasklar
-    // GET /api/tasks/assigned?userId=abc123
     @GetMapping("/assigned")
-    public ResponseEntity<List<TaskResponseDto>> getTasksByAssignedUser(@RequestParam String userId) {
-        return ResponseEntity.ok(taskService.getTasksByAssignedUser(userId));
+    public ResponseEntity<List<TaskResponseDto>> getMyAssignedTasks() {
+        String currentUserId = securityUtils.getCurrentUserId();
+        return ResponseEntity.ok(taskService.getTasksByAssignedUser(currentUserId));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<TaskResponseDto> updateTask(
             @PathVariable String id,
             @Valid @RequestBody TaskRequestDto dto) {
-        return ResponseEntity.ok(taskService.updateTask(id, dto));
+        String currentUserId = securityUtils.getCurrentUserId();
+        return ResponseEntity.ok(taskService.updateTask(id, currentUserId, dto));
     }
 
-    // Sadece status güncellemek için ayrı endpoint — çok kullanılır
-    // PATCH /api/tasks/{id}/status?status=IN_PROGRESS
     @PatchMapping("/{id}/status")
     public ResponseEntity<TaskResponseDto> updateTaskStatus(
             @PathVariable String id,
             @RequestParam TaskStatus status) {
-        return ResponseEntity.ok(taskService.updateTaskStatus(id, status));
+        String currentUserId = securityUtils.getCurrentUserId();
+        return ResponseEntity.ok(taskService.updateTaskStatus(id, currentUserId, status));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTask(@PathVariable String id) {
-        taskService.deleteTask(id);
+        String currentUserId = securityUtils.getCurrentUserId();
+        taskService.deleteTask(id, currentUserId);
         return ResponseEntity.noContent().build();
     }
 }
