@@ -1,7 +1,7 @@
 package com.example.TaskManager.domain.project;
 
-import com.example.TaskManager.domain.project.ProjectRequestDto;
-import com.example.TaskManager.domain.project.ProjectResponseDto;
+import com.example.TaskManager.domain.project.dto.ProjectRequestDto;
+import com.example.TaskManager.domain.project.dto.ProjectResponseDto;
 import com.example.TaskManager.domain.user.User;
 import com.example.TaskManager.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
