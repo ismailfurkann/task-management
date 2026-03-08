@@ -1,4 +1,4 @@
-package com.example.TaskManager.domain.project;
+package com.example.TaskManager.domain.project.dto;
 
 import com.example.TaskManager.domain.project.Project;
 

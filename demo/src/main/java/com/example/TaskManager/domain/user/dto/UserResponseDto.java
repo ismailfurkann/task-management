@@ -1,6 +1,8 @@
-package com.example.TaskManager.domain.user;
+package com.example.TaskManager.domain.user.dto;
 
 
+
+import com.example.TaskManager.domain.user.User;
 
 import java.time.LocalDateTime;
 

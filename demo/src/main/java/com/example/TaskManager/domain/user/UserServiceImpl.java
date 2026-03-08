@@ -1,7 +1,7 @@
 package com.example.TaskManager.domain.user;
 
-import com.example.TaskManager.domain.user.UserRequestDto;
-import com.example.TaskManager.domain.user.UserResponseDto;
+import com.example.TaskManager.domain.user.dto.UserRequestDto;
+import com.example.TaskManager.domain.user.dto.UserResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

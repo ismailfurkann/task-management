@@ -1,4 +1,4 @@
-package com.example.TaskManager.domain.task;
+package com.example.TaskManager.domain.task.dto;
 
 import com.example.TaskManager.domain.task.Priority;
 import com.example.TaskManager.domain.task.TaskStatus;

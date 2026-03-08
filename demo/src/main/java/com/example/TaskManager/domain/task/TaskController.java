@@ -1,7 +1,7 @@
 package com.example.TaskManager.domain.task;
 
-import com.example.TaskManager.domain.task.TaskRequestDto;
-import com.example.TaskManager.domain.task.TaskResponseDto;
+import com.example.TaskManager.domain.task.dto.TaskRequestDto;
+import com.example.TaskManager.domain.task.dto.TaskResponseDto;
 import com.example.TaskManager.security.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
