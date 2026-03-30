@@ -1,6 +1,7 @@
 package com.example.TaskManager.domain.project;
 
 import com.example.TaskManager.common.base.BaseEntity;
+import com.example.TaskManager.domain.member.ProjectMember;
 import com.example.TaskManager.domain.task.Task;
 import com.example.TaskManager.domain.user.User;
 import jakarta.persistence.*;
@@ -19,7 +20,7 @@ public class Project extends BaseEntity {
     @Column(nullable = false)
     private String name;
 
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -28,4 +29,7 @@ public class Project extends BaseEntity {
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Task> tasks = new ArrayList<>();
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ProjectMember> members = new ArrayList<>();
 }

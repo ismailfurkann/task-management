@@ -20,23 +20,23 @@ public class ProjectController {
     private final SecurityUtils securityUtils;
 
     @PostMapping
-    public ResponseEntity<ProjectResponseDto> createProject(
-            @Valid @RequestBody ProjectRequestDto dto) {
-        String ownerId = securityUtils.getCurrentUserId();
+    public ResponseEntity<ProjectResponseDto> createProject(@Valid @RequestBody ProjectRequestDto dto) {
+        String currentUserId = securityUtils.getCurrentUserId();
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(projectService.createProject(ownerId, dto));
+                .body(projectService.createProject(currentUserId, dto));
+    }
+
+    // Hem sahip olduğu hem üye olduğu tüm projeler
+    @GetMapping
+    public ResponseEntity<List<ProjectResponseDto>> getAllProjects() {
+        String currentUserId = securityUtils.getCurrentUserId();
+        return ResponseEntity.ok(projectService.getAllProjectsForUser(currentUserId));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ProjectResponseDto> getProjectById(@PathVariable String id) {
         String currentUserId = securityUtils.getCurrentUserId();
         return ResponseEntity.ok(projectService.getProjectById(id, currentUserId));
-    }
-
-    @GetMapping
-    public ResponseEntity<List<ProjectResponseDto>> getMyProjects() {
-        String ownerId = securityUtils.getCurrentUserId();
-        return ResponseEntity.ok(projectService.getProjectsByOwner(ownerId));
     }
 
     @PutMapping("/{id}")

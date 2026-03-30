@@ -27,22 +27,18 @@ public class TaskServiceImpl implements TaskService {
     private Project getProjectAndVerifyOwner(String projectId, String currentUserId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found"));
-
         if (!project.getOwner().getId().equals(currentUserId)) {
             throw new RuntimeException("Access denied");
         }
-
         return project;
     }
 
     private Task getTaskAndVerifyOwner(String taskId, String currentUserId) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
-
         if (!task.getProject().getOwner().getId().equals(currentUserId)) {
             throw new RuntimeException("Access denied");
         }
-
         return task;
     }
 
@@ -68,7 +64,6 @@ public class TaskServiceImpl implements TaskService {
         User currentUser = securityUtils.getCurrentUser();
 
         activityLogService.log(saved, currentUser, ActivityAction.CREATED_TASK);
-
         if (dto.assignedUserId() != null) {
             activityLogService.log(saved, currentUser, ActivityAction.ASSIGNED_USER);
         }
@@ -78,26 +73,20 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public TaskResponseDto getTaskById(String id, String currentUserId) {
-        Task task = getTaskAndVerifyOwner(id, currentUserId);
-        return TaskResponseDto.from(task);
+        return TaskResponseDto.from(getTaskAndVerifyOwner(id, currentUserId));
     }
 
     @Override
     public List<TaskResponseDto> getTasksByProject(String projectId, String currentUserId) {
         getProjectAndVerifyOwner(projectId, currentUserId);
-
         return taskRepository.findByProjectId(projectId)
-                .stream()
-                .map(TaskResponseDto::from)
-                .toList();
+                .stream().map(TaskResponseDto::from).toList();
     }
 
     @Override
     public List<TaskResponseDto> getTasksByAssignedUser(String userId) {
         return taskRepository.findByAssignedUserId(userId)
-                .stream()
-                .map(TaskResponseDto::from)
-                .toList();
+                .stream().map(TaskResponseDto::from).toList();
     }
 
     @Override
@@ -127,16 +116,9 @@ public class TaskServiceImpl implements TaskService {
         User currentUser = securityUtils.getCurrentUser();
 
         activityLogService.log(updated, currentUser, ActivityAction.UPDATED_TASK);
-
-        if (statusChanged) {
-            activityLogService.log(updated, currentUser, ActivityAction.CHANGED_STATUS);
-        }
-        if (priorityChanged) {
-            activityLogService.log(updated, currentUser, ActivityAction.CHANGED_PRIORITY);
-        }
-        if (assigneeChanged) {
-            activityLogService.log(updated, currentUser, ActivityAction.ASSIGNED_USER);
-        }
+        if (statusChanged) activityLogService.log(updated, currentUser, ActivityAction.CHANGED_STATUS);
+        if (priorityChanged) activityLogService.log(updated, currentUser, ActivityAction.CHANGED_PRIORITY);
+        if (assigneeChanged) activityLogService.log(updated, currentUser, ActivityAction.ASSIGNED_USER);
 
         return TaskResponseDto.from(updated);
     }
@@ -146,9 +128,7 @@ public class TaskServiceImpl implements TaskService {
         Task task = getTaskAndVerifyOwner(id, currentUserId);
         task.setStatus(status);
         Task updated = taskRepository.save(task);
-
         activityLogService.log(updated, securityUtils.getCurrentUser(), ActivityAction.CHANGED_STATUS);
-
         return TaskResponseDto.from(updated);
     }
 

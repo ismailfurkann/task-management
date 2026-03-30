@@ -11,7 +11,8 @@ public interface ProjectService {
 
     ProjectResponseDto getProjectById(String id, String currentUserId);
 
-    List<ProjectResponseDto> getProjectsByOwner(String ownerId);
+    // Hem sahip olduğu hem üye olduğu projeleri döner
+    List<ProjectResponseDto> getAllProjectsForUser(String userId);
 
     ProjectResponseDto updateProject(String id, String currentUserId, ProjectRequestDto dto);
 

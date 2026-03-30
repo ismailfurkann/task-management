@@ -1,5 +1,9 @@
 package com.example.TaskManager.domain.project;
 
+import com.example.TaskManager.domain.member.InviteStatus;
+import com.example.TaskManager.domain.member.MemberRole;
+import com.example.TaskManager.domain.member.ProjectMember;
+import com.example.TaskManager.domain.member.ProjectMemberRepository;
 import com.example.TaskManager.domain.project.dto.ProjectRequestDto;
 import com.example.TaskManager.domain.project.dto.ProjectResponseDto;
 import com.example.TaskManager.domain.user.User;
@@ -7,6 +11,7 @@ import com.example.TaskManager.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -14,6 +19,7 @@ import java.util.List;
 public class ProjectServiceImpl implements ProjectService {
 
     private final ProjectRepository projectRepository;
+    private final ProjectMemberRepository memberRepository;
     private final UserRepository userRepository;
 
     @Override
@@ -22,7 +28,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (projectRepository.existsByNameAndOwnerId(dto.name(), ownerId)) {
-            throw new RuntimeException("Project with this name already exists");
+            throw new RuntimeException("Bu isimde bir projen zaten var");
         }
 
         Project project = new Project();
@@ -30,7 +36,17 @@ public class ProjectServiceImpl implements ProjectService {
         project.setDescription(dto.description());
         project.setOwner(owner);
 
-        return ProjectResponseDto.from(projectRepository.save(project));
+        Project saved = projectRepository.save(project);
+
+        // Proje sahibini otomatik olarak OWNER rolüyle üye ekle
+        ProjectMember ownerMember = new ProjectMember();
+        ownerMember.setProject(saved);
+        ownerMember.setUser(owner);
+        ownerMember.setRole(MemberRole.OWNER);
+        ownerMember.setStatus(InviteStatus.ACCEPTED);
+        memberRepository.save(ownerMember);
+
+        return ProjectResponseDto.from(saved);
     }
 
     @Override
@@ -38,8 +54,13 @@ public class ProjectServiceImpl implements ProjectService {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Project not found"));
 
-        // Sadece proje sahibi görebilir
-        if (!project.getOwner().getId().equals(currentUserId)) {
+        // Erişim kontrolü: sahip veya ACCEPTED üye olmalı
+        boolean isOwner = project.getOwner().getId().equals(currentUserId);
+        boolean isMember = memberRepository.findByProjectIdAndUserId(id, currentUserId)
+                .map(m -> m.getStatus() == InviteStatus.ACCEPTED)
+                .orElse(false);
+
+        if (!isOwner && !isMember) {
             throw new RuntimeException("Access denied");
         }
 
@@ -47,9 +68,21 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public List<ProjectResponseDto> getProjectsByOwner(String ownerId) {
-        return projectRepository.findByOwnerId(ownerId)
+    public List<ProjectResponseDto> getAllProjectsForUser(String userId) {
+        // Sahip olduğu projeler
+        List<Project> owned = projectRepository.findByOwnerId(userId);
+
+        // Üye olduğu projeler (ACCEPTED, sahip olduğu hariç)
+        List<Project> memberOf = projectRepository.findProjectsByMemberId(userId)
                 .stream()
+                .filter(p -> !p.getOwner().getId().equals(userId))
+                .toList();
+
+        List<Project> all = new ArrayList<>();
+        all.addAll(owned);
+        all.addAll(memberOf);
+
+        return all.stream()
                 .map(ProjectResponseDto::from)
                 .toList();
     }
@@ -61,7 +94,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         // Sadece proje sahibi güncelleyebilir
         if (!project.getOwner().getId().equals(currentUserId)) {
-            throw new RuntimeException("Access denied");
+            throw new RuntimeException("Access denied — sadece proje sahibi güncelleyebilir");
         }
 
         project.setName(dto.name());
@@ -77,7 +110,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         // Sadece proje sahibi silebilir
         if (!project.getOwner().getId().equals(currentUserId)) {
-            throw new RuntimeException("Access denied");
+            throw new RuntimeException("Access denied — sadece proje sahibi silebilir");
         }
 
         projectRepository.deleteById(id);
