@@ -33,6 +33,21 @@ public class TaskServiceImpl implements TaskService {
         return project;
     }
 
+    private Task getTaskAndVerifyAccess(String taskId, String currentUserId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        boolean isProjectOwner = task.getProject().getOwner().getId().equals(currentUserId);
+        boolean isAssignee = task.getAssignedUser() != null &&
+                task.getAssignedUser().getId().equals(currentUserId);
+
+        if (!isProjectOwner && !isAssignee) {
+            throw new RuntimeException("Access denied");
+        }
+        return task;
+    }
+
+    // Sadece proje sahibi değiştirebilir/silebilir
     private Task getTaskAndVerifyOwner(String taskId, String currentUserId) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
@@ -73,7 +88,7 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public TaskResponseDto getTaskById(String id, String currentUserId) {
-        return TaskResponseDto.from(getTaskAndVerifyOwner(id, currentUserId));
+        return TaskResponseDto.from(getTaskAndVerifyAccess(id, currentUserId));
     }
 
     @Override

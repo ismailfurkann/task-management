@@ -4,6 +4,7 @@ import com.example.TaskManager.domain.activity.dto.ActivityLogResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.w3c.dom.ls.LSOutput;
 
 import java.util.List;
 
@@ -23,4 +24,5 @@ public class ActivityLogController {
     public ResponseEntity<List<ActivityLogResponseDto>> getProjectActivity(@PathVariable String projectId) {
         return ResponseEntity.ok(activityLogService.getByProject(projectId));
     }
+
 }

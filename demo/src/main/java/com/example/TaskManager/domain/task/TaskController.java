@@ -9,6 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @RestController
@@ -17,6 +20,7 @@ import java.util.List;
 public class TaskController {
 
     private final TaskService taskService;
+    private final TaskRepository taskRepository;
     private final SecurityUtils securityUtils;
 
     @PostMapping
@@ -44,6 +48,27 @@ public class TaskController {
     public ResponseEntity<List<TaskResponseDto>> getMyAssignedTasks() {
         String currentUserId = securityUtils.getCurrentUserId();
         return ResponseEntity.ok(taskService.getTasksByAssignedUser(currentUserId));
+    }
+
+    // Yaklaşan taskler — sahip olduğun + sana atanan, sonraki 7 gün
+    @GetMapping("/upcoming")
+    public ResponseEntity<List<TaskResponseDto>> getUpcomingTasks() {
+        String currentUserId = securityUtils.getCurrentUserId();
+        LocalDate today = LocalDate.now();
+        LocalDate in7Days = today.plusDays(7);
+
+        List<Task> owned = taskRepository.findUpcomingTasksByOwner(currentUserId, today, in7Days);
+        List<Task> assigned = taskRepository.findUpcomingTasksByAssignee(currentUserId, today, in7Days);
+
+        // Birleştir, duplicate'leri kaldır, tarihe göre sırala
+        List<Task> all = new ArrayList<>(owned);
+        assigned.stream()
+                .filter(t -> owned.stream().noneMatch(o -> o.getId().equals(t.getId())))
+                .forEach(all::add);
+
+        all.sort(Comparator.comparing(Task::getDueDate));
+
+        return ResponseEntity.ok(all.stream().map(TaskResponseDto::from).toList());
     }
 
     @PutMapping("/{id}")

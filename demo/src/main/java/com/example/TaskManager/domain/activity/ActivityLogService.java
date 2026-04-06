@@ -14,7 +14,7 @@ public class ActivityLogService {
 
     private final ActivityLogRepository activityLogRepository;
 
-    // Diğer servislerden çağrılır
+
     public void log(Task task, User user, ActivityAction action) {
         ActivityLog log = new ActivityLog();
         log.setTask(task);
