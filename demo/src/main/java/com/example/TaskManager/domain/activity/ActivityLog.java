@@ -17,6 +17,10 @@ public class ActivityLog extends BaseEntity {
     @Column(nullable = false)
     private ActivityAction action;
 
+    // Task silinse bile aktivite anlamlı kalsın diye snapshot alıyoruz
+    @Column(nullable = false)
+    private String taskTitle;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_id", nullable = false)
     private Task task;
