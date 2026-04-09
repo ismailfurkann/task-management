@@ -37,24 +37,24 @@ public class AttachmentController {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
 
-        // Dosya tipi kontrolü — sadece resim ve PDF
         String contentType = file.getContentType();
         if (contentType == null ||
                 (!contentType.startsWith("image/") && !contentType.equals("application/pdf"))) {
             throw new RuntimeException("Sadece resim ve PDF dosyaları yüklenebilir");
         }
 
-        // Max 10MB kontrolü
         if (file.getSize() > 10 * 1024 * 1024) {
             throw new RuntimeException("Dosya boyutu 10MB'ı geçemez");
         }
 
-        // Cloudinary'ye yükle
+
         Map uploadResult = cloudinary.uploader().upload(
                 file.getBytes(),
                 ObjectUtils.asMap(
                         "folder", "fuce/tasks/" + taskId,
-                        "resource_type", "auto"
+                        "resource_type", "auto",
+                        "use_filename", true,
+                        "unique_filename", true
                 )
         );
 
@@ -62,6 +62,7 @@ public class AttachmentController {
         attachment.setFileName(file.getOriginalFilename());
         attachment.setFileUrl((String) uploadResult.get("secure_url"));
         attachment.setPublicId((String) uploadResult.get("public_id"));
+        attachment.setResourceType((String) uploadResult.get("resource_type")); // image / raw / video
         attachment.setFileType(contentType);
         attachment.setFileSize(file.getSize());
         attachment.setTask(task);
@@ -89,7 +90,6 @@ public class AttachmentController {
         Attachment attachment = attachmentRepository.findById(attachmentId)
                 .orElseThrow(() -> new RuntimeException("Attachment not found"));
 
-        // Sadece yükleyen kişi veya proje sahibi silebilir
         String currentUserId = securityUtils.getCurrentUserId();
         boolean isUploader = attachment.getUploadedBy().getId().equals(currentUserId);
         boolean isOwner = attachment.getTask().getProject().getOwner().getId().equals(currentUserId);
@@ -98,11 +98,20 @@ public class AttachmentController {
             throw new RuntimeException("Access denied");
         }
 
-        // Cloudinary'den sil
-        cloudinary.uploader().destroy(
-                attachment.getPublicId(),
-                ObjectUtils.asMap("resource_type", "auto")
-        );
+
+        String resourceType = attachment.getResourceType() != null
+                ? attachment.getResourceType()
+                : "image";
+
+        try {
+            cloudinary.uploader().destroy(
+                    attachment.getPublicId(),
+                    ObjectUtils.asMap("resource_type", resourceType)
+            );
+        } catch (Exception e) {
+
+            System.err.println("Cloudinary silme hatası: " + e.getMessage());
+        }
 
         attachmentRepository.deleteById(attachmentId);
         return ResponseEntity.noContent().build();

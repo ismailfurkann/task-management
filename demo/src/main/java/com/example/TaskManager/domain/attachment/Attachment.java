@@ -17,16 +17,19 @@ public class Attachment extends BaseEntity {
     private String fileName;
 
     @Column(nullable = false)
-    private String fileUrl;       // Cloudinary URL
+    private String fileUrl;
 
     @Column(nullable = false)
-    private String publicId;      // Cloudinary public_id (silmek için)
+    private String publicId;
 
     @Column(nullable = false)
-    private String fileType;      // image/png, application/pdf vb.
+    private String resourceType;
 
     @Column(nullable = false)
-    private Long fileSize;        // byte cinsinden
+    private String fileType;
+
+    @Column(nullable = false)
+    private Long fileSize;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_id", nullable = false)
