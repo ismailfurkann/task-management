@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 public record ActivityLogResponseDto(
         String id,
         ActivityAction action,
+        String taskTitle,
         String userId,
         String userName,
         LocalDateTime createdAt
@@ -16,6 +17,7 @@ public record ActivityLogResponseDto(
         return new ActivityLogResponseDto(
                 log.getId(),
                 log.getAction(),
+                log.getTaskTitle(),
                 log.getUser().getId(),
                 log.getUser().getName(),
                 log.getCreatedAt()

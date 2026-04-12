@@ -27,30 +27,26 @@ public class TaskController {
     public ResponseEntity<TaskResponseDto> createTask(
             @RequestParam String projectId,
             @Valid @RequestBody TaskRequestDto dto) {
-        String currentUserId = securityUtils.getCurrentUserId();
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(taskService.createTask(projectId, currentUserId, dto));
+                .body(taskService.createTask(projectId, securityUtils.getCurrentUserId(), dto));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<TaskResponseDto> getTaskById(@PathVariable String id) {
-        String currentUserId = securityUtils.getCurrentUserId();
-        return ResponseEntity.ok(taskService.getTaskById(id, currentUserId));
+        return ResponseEntity.ok(taskService.getTaskById(id, securityUtils.getCurrentUserId()));
     }
 
     @GetMapping
     public ResponseEntity<List<TaskResponseDto>> getTasksByProject(@RequestParam String projectId) {
-        String currentUserId = securityUtils.getCurrentUserId();
-        return ResponseEntity.ok(taskService.getTasksByProject(projectId, currentUserId));
+        return ResponseEntity.ok(taskService.getTasksByProject(projectId, securityUtils.getCurrentUserId()));
     }
 
     @GetMapping("/assigned")
     public ResponseEntity<List<TaskResponseDto>> getMyAssignedTasks() {
-        String currentUserId = securityUtils.getCurrentUserId();
-        return ResponseEntity.ok(taskService.getTasksByAssignedUser(currentUserId));
+        return ResponseEntity.ok(taskService.getTasksByAssignedUser(securityUtils.getCurrentUserId()));
     }
 
-    // Yaklaşan taskler — sahip olduğun + sana atanan, sonraki 7 gün
+    // Yaklaşan taskler — sonraki 7 gün
     @GetMapping("/upcoming")
     public ResponseEntity<List<TaskResponseDto>> getUpcomingTasks() {
         String currentUserId = securityUtils.getCurrentUserId();
@@ -60,37 +56,65 @@ public class TaskController {
         List<Task> owned = taskRepository.findUpcomingTasksByOwner(currentUserId, today, in7Days);
         List<Task> assigned = taskRepository.findUpcomingTasksByAssignee(currentUserId, today, in7Days);
 
-        // Birleştir, duplicate'leri kaldır, tarihe göre sırala
         List<Task> all = new ArrayList<>(owned);
         assigned.stream()
                 .filter(t -> owned.stream().noneMatch(o -> o.getId().equals(t.getId())))
                 .forEach(all::add);
-
         all.sort(Comparator.comparing(Task::getDueDate));
 
         return ResponseEntity.ok(all.stream().map(TaskResponseDto::from).toList());
+    }
+
+    // Arama — proje içinde
+    @GetMapping("/search")
+    public ResponseEntity<List<TaskResponseDto>> searchInProject(
+            @RequestParam String projectId,
+            @RequestParam String query) {
+        return ResponseEntity.ok(
+                taskRepository.searchInProject(projectId, query)
+                        .stream().map(TaskResponseDto::from).toList()
+        );
+    }
+
+    // Arama — tüm erişilebilir taskler
+    @GetMapping("/search/all")
+    public ResponseEntity<List<TaskResponseDto>> searchAll(@RequestParam String query) {
+        return ResponseEntity.ok(
+                taskRepository.searchAllAccessible(securityUtils.getCurrentUserId(), query)
+                        .stream().map(TaskResponseDto::from).toList()
+        );
+    }
+
+    // Filtreleme — durum, öncelik, assignee
+    @GetMapping("/filter")
+    public ResponseEntity<List<TaskResponseDto>> filterTasks(
+            @RequestParam String projectId,
+            @RequestParam(required = false) TaskStatus status,
+            @RequestParam(required = false) Priority priority,
+            @RequestParam(required = false) String assignedUserId) {
+        return ResponseEntity.ok(
+                taskRepository.filterByProject(projectId, status, priority, assignedUserId)
+                        .stream().map(TaskResponseDto::from).toList()
+        );
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<TaskResponseDto> updateTask(
             @PathVariable String id,
             @Valid @RequestBody TaskRequestDto dto) {
-        String currentUserId = securityUtils.getCurrentUserId();
-        return ResponseEntity.ok(taskService.updateTask(id, currentUserId, dto));
+        return ResponseEntity.ok(taskService.updateTask(id, securityUtils.getCurrentUserId(), dto));
     }
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<TaskResponseDto> updateTaskStatus(
             @PathVariable String id,
             @RequestParam TaskStatus status) {
-        String currentUserId = securityUtils.getCurrentUserId();
-        return ResponseEntity.ok(taskService.updateTaskStatus(id, currentUserId, status));
+        return ResponseEntity.ok(taskService.updateTaskStatus(id, securityUtils.getCurrentUserId(), status));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTask(@PathVariable String id) {
-        String currentUserId = securityUtils.getCurrentUserId();
-        taskService.deleteTask(id, currentUserId);
+        taskService.deleteTask(id, securityUtils.getCurrentUserId());
         return ResponseEntity.noContent().build();
     }
 }
