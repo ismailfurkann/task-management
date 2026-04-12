@@ -26,6 +26,20 @@ public class JwtFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
+        String requestPath = request.getRequestURI();
+
+        // Preflight requestleri direkt geçir
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // Auth endpointleri token istemesin
+        if (requestPath.startsWith("/api/auth/")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         final String authHeader = request.getHeader("Authorization");
 
         // Header yoksa veya Bearer ile başlamıyorsa geç
@@ -34,7 +48,7 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
 
-        final String token = authHeader.substring(7); // "Bearer " sonrasını al
+        final String token = authHeader.substring(7);
         final String email = jwtService.extractEmail(token);
 
         // Email var ama authentication henüz set edilmemişse
@@ -48,6 +62,7 @@ public class JwtFilter extends OncePerRequestFilter {
                                 null,
                                 userDetails.getAuthorities()
                         );
+
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
